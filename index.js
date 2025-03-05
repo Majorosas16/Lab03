@@ -3,14 +3,19 @@ const path = require("path");
 const cors = require("cors");
 
 const app = express();
-app.use(cors()); // Habilita peticiones desde el front
+app.use(cors()); 
 app.use(express.json());
 
 app.use("/app1", express.static(path.join(__dirname, "app1")));
 app.use("/app2", express.static(path.join(__dirname, "app2")));
 
-let players = {}; // { nombre: jugada }
+let players = {}; // { nombre: null }
 let moves = {};   // { nombre: "rock", "paper" o "scissors" }
+let timeoutId = null; // Temporizador de 10 segundos
+
+app.get("/users", (req, res) => {
+  res.json({ players: Object.keys(players) });
+});
 
 app.post("/register", (req, res) => {
   const { name } = req.body;
@@ -22,8 +27,13 @@ app.post("/register", (req, res) => {
     return res.status(400).json({ message: "El juego ya tiene dos jugadores" });
   }
 
-  players[name] = null; // Jugador registrado pero sin jugar
+  players[name] = null;
   res.json({ message: `Jugador ${name} registrado`, players: Object.keys(players) });
+
+  // Cuando hay 2 jugadores, comienza el temporizador
+  if (Object.keys(players).length === 2) {
+    startCountdown();
+  }
 });
 
 app.post("/play", (req, res) => {
@@ -35,37 +45,45 @@ app.post("/play", (req, res) => {
   moves[name] = move;
 
   if (Object.keys(moves).length === 2) {
-    res.json({ message: "Esperando al otro jugador..." });
-  } else {
-    res.json({ message: `Has jugado: ${move}. Esperando al oponente...` });
+    clearTimeout(timeoutId); // Detiene el temporizador si ambos jugaron
+    return determineWinner(res);
   }
+
+  res.json({ message: `Has jugado: ${move}. Esperando al oponente...` });
 });
 
-app.get("/users", (req, res) => {
-  const playerNames = Object.keys(moves);
+function startCountdown() {
+  timeoutId = setTimeout(() => {
+    const playerNames = Object.keys(players);
+    const [p1, p2] = playerNames;
+    
+    if (!moves[p1] && !moves[p2]) {
+      return resetGame("Ambos jugadores perdieron por inactividad.");
+    } else if (!moves[p1]) {
+      return resetGame(`${p2} gana porque ${p1} no jugó a tiempo.`);
+    } else if (!moves[p2]) {
+      return resetGame(`${p1} gana porque ${p2} no jugó a tiempo.`);
+    }
+  }, 10000); // 10 segundos
+}
 
-  if (playerNames.length < 2) {
-    return res.json({ message: "Esperando a ambos jugadores..." });
-  }
-
+function determineWinner(res) {
+  const playerNames = Object.keys(players);
   const [p1, p2] = playerNames;
-  const result = determineWinner(moves[p1], moves[p2]);
+  const result = getWinner(moves[p1], moves[p2]);
 
-  const finalResult = result === "draw" ? "Empate" : `${result} gana`;
-
+  const finalMessage = result === "draw" ? "Empate" : `${result} gana`;
+  
   res.json({
     players: playerNames,
     moves,
-    result: finalResult,
+    result: finalMessage
   });
 
-  setTimeout(() => {
-    players = {};
-    moves = {};
-  }, 5000); // Reiniciar el juego después de 5 segundos
-});
+  resetGame(finalMessage);
+}
 
-function determineWinner(move1, move2) {
+function getWinner(move1, move2) {
   if (move1 === move2) return "draw";
   if (
     (move1 === "rock" && move2 === "scissors") ||
@@ -75,6 +93,13 @@ function determineWinner(move1, move2) {
     return "Jugador 1";
   }
   return "Jugador 2";
+}
+
+function resetGame(message) {
+  console.log(message);
+  players = {};
+  moves = {};
+  timeoutId = null;
 }
 
 app.listen(5050, () => console.log("Servidor corriendo en http://localhost:5050"));

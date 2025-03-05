@@ -7,7 +7,7 @@
 //     .catch((error) => console.error("Error:", error));
 // }
 
-let playerName = ""; // 👈 Mover la declaración arriba
+let playerName = "";
 
 document.getElementById("register-btn").addEventListener("click", registerPlayer);
 document.getElementById("rock-btn").addEventListener("click", () => play("rock"));
@@ -29,10 +29,10 @@ function registerPlayer() {
   })
     .then(response => response.json())
     .then(data => {
-      console.log("Respuesta del servidor:", data); // Ver log en consola
       document.getElementById("status").innerText = data.message;
       if (data.message.includes("registrado")) {
-        enableButtons(true); // Habilita los botones después del registro
+        enableButtons(true);
+        startCountdown();
       }
     })
     .catch(error => console.error("Error:", error));
@@ -51,7 +51,6 @@ function play(move) {
   })
     .then(response => response.json())
     .then(data => {
-      console.log("Respuesta del servidor (play):", data); // Log de depuración
       document.getElementById("status").innerText = data.message;
     })
     .catch(error => console.error("Error:", error));
@@ -63,5 +62,21 @@ function enableButtons(enabled) {
   document.getElementById("scissors-btn").disabled = !enabled;
 }
 
-// Deshabilitar los botones al inicio
-enableButtons(false);
+function startCountdown() {
+  let timeLeft = 10;
+  const timerDisplay = document.getElementById("status");
+  
+  const timer = setInterval(() => {
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      timerDisplay.innerText = "¡Tiempo agotado!";
+      enableButtons(false);
+    } else {
+      timerDisplay.innerText = `Tiempo restante: ${timeLeft} segundos`;
+      timeLeft--;
+    }
+  }, 1000);
+}
+
+// Deshabilita los botones al inicio
+enableButto

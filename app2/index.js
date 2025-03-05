@@ -7,49 +7,61 @@
 //     .catch((error) => console.error("Error:", error));
 // }
 
+let playerName = ""; // 👈 Mover la declaración arriba
 
 document.getElementById("register-btn").addEventListener("click", registerPlayer);
-document.getElementById("rock-btn").addEventListener("click", () => sendMove("rock"));
-document.getElementById("paper-btn").addEventListener("click", () => sendMove("paper"));
-document.getElementById("scissors-btn").addEventListener("click", () => sendMove("scissors"));
+document.getElementById("rock-btn").addEventListener("click", () => play("rock"));
+document.getElementById("paper-btn").addEventListener("click", () => play("paper"));
+document.getElementById("scissors-btn").addEventListener("click", () => play("scissors"));
 
-let playerName = "";
+function registerPlayer() {
+  playerName = document.getElementById("name-input").value.trim();
 
-async function registerPlayer() {
-  const name = document.getElementById("name-input").value;
-  if (!name) {
-    alert("Por favor, ingresa tu nombre.");
-    return;
-  }
-
-  const response = await fetch("http://localhost:5050/register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name }),
-  });
-
-  const data = await response.json();
-  console.log(data.message);
-
-  if (data.players) {
-    playerName = name;
-    document.getElementById("status").innerText = `Registrado como: ${playerName}`;
-  }
-}
-
-async function sendMove(move) {
   if (!playerName) {
-    alert("Debes registrarte antes de jugar.");
+    document.getElementById("status").innerText = "Debes ingresar un nombre.";
     return;
   }
 
-  const response = await fetch("http://localhost:5050/play", {
+  fetch("http://localhost:5050/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name: playerName, move }),
-  });
-
-  const data = await response.json();
-  console.log(data.message);
-  document.getElementById("status").innerText = data.message;
+    body: JSON.stringify({ name: playerName })
+  })
+    .then(response => response.json())
+    .then(data => {
+      console.log("Respuesta del servidor:", data); // Ver log en consola
+      document.getElementById("status").innerText = data.message;
+      if (data.message.includes("registrado")) {
+        enableButtons(true); // Habilita los botones después del registro
+      }
+    })
+    .catch(error => console.error("Error:", error));
 }
+
+function play(move) {
+  if (!playerName) {
+    document.getElementById("status").innerText = "Debes registrarte primero.";
+    return;
+  }
+
+  fetch("http://localhost:5050/play", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: playerName, move })
+  })
+    .then(response => response.json())
+    .then(data => {
+      console.log("Respuesta del servidor (play):", data); // Log de depuración
+      document.getElementById("status").innerText = data.message;
+    })
+    .catch(error => console.error("Error:", error));
+}
+
+function enableButtons(enabled) {
+  document.getElementById("rock-btn").disabled = !enabled;
+  document.getElementById("paper-btn").disabled = !enabled;
+  document.getElementById("scissors-btn").disabled = !enabled;
+}
+
+// Deshabilitar los botones al inicio
+enableButtons(false);

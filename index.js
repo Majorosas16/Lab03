@@ -41,7 +41,7 @@ app.post("/play", (req, res) => {
   }
 });
 
-app.get("/result", (req, res) => {
+app.get("/users", (req, res) => {
   const playerNames = Object.keys(moves);
 
   if (playerNames.length < 2) {

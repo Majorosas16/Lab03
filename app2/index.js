@@ -79,4 +79,4 @@ function startCountdown() {
 }
 
 // Deshabilita los botones al inicio
-enableButto
+enableButtons(false);

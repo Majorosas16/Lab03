@@ -11,44 +11,41 @@ const movesDiv = document.getElementById("moves");
 const resultDiv = document.getElementById("result");
 
 function fetchGameState() {
-    fetch("http://localhost:5050/result")
-        .then((response) => response.json())
-        .then((data) => {
-            if (!data.players || data.players.length < 2) {
-                playersDiv.innerText = "Waiting for players...";
-                movesDiv.innerText = "";
-                resultDiv.innerText = "";
-                return;
-            }
+  fetch("http://localhost:5050/result")
+  .then(response => response.json())
+  .then(data => {
+      if (!data.players || data.players.length < 2) {
+          playersDiv.innerText = "Esperando jugadores...";
+          movesDiv.innerText = "";
+          resultDiv.innerText = "";
+          return;
+      }
 
-            // Mostrar jugadores
-            playersDiv.innerText = `Players: ${data.players[0]} vs ${data.players[1]}`;
+      playersDiv.innerText = `Jugadores: ${data.players[0]} vs ${data.players[1]}`;
 
-            // Si aún no han jugado los dos, esperar
-            if (!data.moves || Object.keys(data.moves).length < 2) {
-                movesDiv.innerText = "Waiting for both players to play...";
-                resultDiv.innerText = "";
-                return;
-            }
+      if (!data.moves || Object.keys(data.moves).length < 2) {
+          movesDiv.innerText = "Esperando a que ambos jueguen...";
+          resultDiv.innerText = "";
+          return;
+      }
 
-            // Mostrar jugadas
-            movesDiv.innerText = `${data.players[0]}: ${data.moves[data.players[0]]}  |  
-                                  ${data.players[1]}: ${data.moves[data.players[1]]}`;
+      movesDiv.innerText = `${data.players[0]}: ${data.moves[data.players[0]]}  |  
+                            ${data.players[1]}: ${data.moves[data.players[1]]}`;
 
-            // Mostrar resultado
-            resultDiv.innerText = `Result: ${data.result}`;
+      resultDiv.innerText = `Resultado: ${data.result}`;
 
-            // Borrar info después de 5 segundos
-            setTimeout(() => {
-                fetch("http://localhost:5050/reset", { method: "POST" })
-                    .then(() => {
-                        playersDiv.innerText = "Waiting for players...";
-                        movesDiv.innerText = "";
-                        resultDiv.innerText = "";
-                    });
-            }, 5000);
-        })
-        .catch((error) => console.error("Error:", error));
+      // Reiniciar juego después de 5 segundos
+      setTimeout(() => {
+          fetch("http://localhost:5050/reset", { method: "POST" })
+              .then(() => {
+                  playersDiv.innerText = "Esperando jugadores...";
+                  movesDiv.innerText = "";
+                  resultDiv.innerText = "";
+              });
+      }, 5000);
+  })
+  .catch((error) => console.error("Error:", error));
+
 }
 
 // Actualizar cada 2 segundos

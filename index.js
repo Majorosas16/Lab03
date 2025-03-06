@@ -59,10 +59,16 @@ app.post("/play", (req, res) => {
   }
 //Verifica si ambos jugadores han realizado sus jugadas.
   if (Object.keys(moves).length === 2) {
-    return resultsGame(res);
+    return resultsGame(req, res);
   }
 
   res.json({ message: `Elegiste: ${move}. Espera tu oponente` });
+});
+
+//POST: Reiniciar juego
+app.post("/reset", (req, res) => {
+  resetGame("Nuevo juego iniciado");
+  res.json({ message: "Juego reiniciado" });
 });
 
 // Contador 10s en partida
@@ -83,18 +89,19 @@ function countdown() {
 }
 
 // Reglas del juego. Envia respuesta al cliente en un JSON
-function resultsGame(res) {
+function resultsGame(req, res) {
+  const { name } = req.body;
   const playerNames = Object.keys(players);
   const [p1, p2] = playerNames;
-  const winPlayer = gameRules(moves[p1], moves[p2]);
+  const winPlayer = gameRules(moves[p1], moves[p2], name);
 
-  if (winPlayer === "draw") {
+  if (winPlayer === "empate") {
     lastResult = "Empate";
   } else {
     lastResult = `${winPlayer} gana`;
   }
   
-  //Winner
+  //Winner JSON
   res.json({
     players: playerNames,
     moves,
@@ -105,13 +112,13 @@ function resultsGame(res) {
 }
 
 // Reglas
-function gameRules(move1, move2) {
+function gameRules(move1, move2, name) {
   if (move1 === move2) return "empate";
   if ((move1 === "rock" && move2 === "scissors") || (move1 === "scissors" && move2 === "paper") || (move1 === "paper" && move2 === "rock")){
 
-    return "Jugador 1";
+    return `Jugador ${name}`;
   }
-  return "Jugador 2";
+  return `Jugador ${name}`;
 }
 
 // Resetea juego despues de jugar o si se acaba el tiempo

@@ -59,7 +59,8 @@ app.post("/play", (req, res) => {
   }
 //Verifica si ambos jugadores han realizado sus jugadas.
   if (Object.keys(moves).length === 2) {
-    return resultsGame(req, res);
+    resultsGame(req, res);
+    return;
   }
 
   res.json({ message: `Elegiste: ${move}. Espera tu oponente` });

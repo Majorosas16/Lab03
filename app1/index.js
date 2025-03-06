@@ -9,25 +9,29 @@ function fetchGameState() {
       console.log("Estado del juego:", data);
 
       if (!data.players || data.players.length < 2) {
-        playersDiv.innerText = "Waiting for players...";
+        playersDiv.innerText = "Esperando el registro de jugadores...";
         movesDiv.innerText = "";
         resultDiv.innerText = "";
         return;
       }
 
-      playersDiv.innerHTML = `<strong>Players:</strong> ${data.players[0]} vs ${data.players[1]}`;
+      // Muestra los jugadores registrados
+      playersDiv.innerHTML = `<strong>Jugadores:</strong> ${data.players[0]} vs ${data.players[1]}`;
 
+      // Muestra un loading luego de que los jugadores se registran
       if (!data.moves || Object.keys(data.moves).length < 2) {
-        movesDiv.innerHTML = `<em>Waiting for both players to play...</em>`;
+        movesDiv.innerHTML = `<em>Esperando las jugadas de los jugadores...</em>`;
         resultDiv.innerText = "";
         return;
       }
 
+      // Muestra el nombre y lo que eligió cada jugador (se supone)
       movesDiv.innerHTML = `<strong>${data.players[0]}</strong>: ${data.moves[data.players[0]]} |
                             <strong>${data.players[1]}</strong>: ${data.moves[data.players[1]]}`;
 
       resultDiv.innerHTML = `<h2 style="color:red;">Result: ${data.winner}</h2>`;
 
+      // Reinicio luego de 5 segundos atravez de un POST
       setTimeout(() => {
         fetch("http://localhost:5050/reset", { method: "POST" })
           .then(() => {

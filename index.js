@@ -1,73 +1,77 @@
 const express = require("express");
-const path = require("path");
-const cors = require("cors");
+const path = require("path"); // Manejar rutas de archivos.
+const cors = require("cors"); // Permite que pueda tener varias pestañas abiertas del mismo localhost
 
+//(Cross-Origin Resource Sharing) es un middleware que permite a los navegadores web realizar solicitudes HTTP desde un dominio diferente al dominio del servidor.
 const app = express();
-app.use(cors());
+app.use(cors()); //Habilita el cors
 app.use(express.json());
 
+//"Todos los archivos dentro de la carpeta 'app1' se vuelven accesibles bajo la ruta '/app1' o '/app2'".
 app.use("/app1", express.static(path.join(__dirname, "app1")));
 app.use("/app2", express.static(path.join(__dirname, "app2")));
 
-let players = {}; // { nombre: null }
-let moves = {};   // { nombre: "rock", "paper" o "scissors" }
-let timeoutId = null; // Temporizador de 10 segundos
-let lastResult = ""; // Último resultado mostrado
+let players = [];
+let moves = {};  //El movimiento de cada jugador quedará guardado en el objeto
+let timeoutId = null; //por el momento el temporizador no está activo
+let lastResult = ""; 
 
-// Obtener jugadores registrados
+// GET: Obtener jugadores registrados
 app.get("/users", (req, res) => {
-  res.json({ players: Object.keys(players) });
+  res.json({ players: Object.keys(players), moves, winner: lastResult });
 });
 
-// Registro de jugadores
+// POST: Registro de por medio del input
 app.post("/register", (req, res) => {
   const { name } = req.body;
-  if (!name) {
-    return res.status(400).json({ message: "El nombre es obligatorio" });
+  if (!name) { //Verifica que antes de darle al btn registrar haya un nombre
+    return res.status(400).json({ message: "Ops, el nombre es obligatorio" });
   }
-
+//objects.keys() devuelve un array de keys en las propiedades de "players  "
   if (Object.keys(players).length >= 2) {
-    return res.status(400).json({ message: "El juego ya tiene dos jugadores" });
+    return res.status(400).json({ message: "Ops, solo 2 jugadores" });
   }
 
-  players[name] = null;
-  res.json({ message: `Jugador ${name} registrado`, players: Object.keys(players) });
+  players[name] = null; //Este jugador se ha registrado, pero aún no sabemos qué jugada ha elegido
 
-  // Cuando hay 2 jugadores, comienza el temporizador
+  res.json({ message: `¡Jugador ${name} registrado!`, players: Object.keys(players) });
+
+  // Cuando hay 2 jugadores, comienza el temporizador o la function startCountdown()
   if (Object.keys(players).length === 2) {
-    startCountdown();
+    countdown();
   }
 });
 
-// Registrar jugada
+// POST: El juego
 app.post("/play", (req, res) => {
   const { name, move } = req.body;
   
   if (!players.hasOwnProperty(name)) {
-    return res.status(400).json({ message: "Debes registrarte antes de jugar" });
+    return res.status(400).json({ message: "Debes registrarte" });
   }
 
-  moves[name] = move;
+  moves[name] = move; //Se guarda la jugada del jugador con base a su nombre
 
-  // Si al menos un jugador ya jugó, detenemos el temporizador
+  // Resetea temporizador si ambos jugadores han jugado.
   if (Object.keys(moves).length === 1) {
     clearTimeout(timeoutId);
-    timeoutId = null; // Evitar que se ejecute
+    timeoutId = null;
   }
-
+//Verifica si ambos jugadores han realizado sus jugadas.
   if (Object.keys(moves).length === 2) {
-    return determineWinner(res);
+    return resultsGame(res);
   }
 
-  res.json({ message: `Has jugado: ${move}. Esperando al oponente...` });
+  res.json({ message: `Elegiste: ${move}. Espera tu oponente` });
 });
 
-// Iniciar el temporizador de inactividad
-function startCountdown() {
+// Contador 10s en partida
+function countdown() {
   timeoutId = setTimeout(() => {
     const playerNames = Object.keys(players);
-    const [p1, p2] = playerNames;
+    const [p1, p2] = playerNames; //desestructuración de arrays, le asigna a p1 y p2 el nombre dependiendo de la posición en el array
     
+    //Innactividad
     if (!moves[p1] && !moves[p2]) {
       return resetGame("Ambos jugadores perdieron por inactividad.");
     } else if (!moves[p1]) {
@@ -75,57 +79,49 @@ function startCountdown() {
     } else if (!moves[p2]) {
       return resetGame(`${p1} gana porque ${p2} no jugó a tiempo.`);
     }
-  }, 10000); // 10 segundos
+  }, 10000); 
 }
 
-// Determinar el ganador
-function determineWinner(res) {
+// Reglas del juego. Envia respuesta al cliente en un JSON
+function resultsGame(res) {
   const playerNames = Object.keys(players);
   const [p1, p2] = playerNames;
-  const result = getWinner(moves[p1], moves[p2]);
+  const winPlayer = gameRules(moves[p1], moves[p2]);
 
-  lastResult = result === "draw" ? "Empate" : `${result} gana`;
+  if (winPlayer === "draw") {
+    lastResult = "Empate";
+  } else {
+    lastResult = `${winPlayer} gana`;
+  }
   
+  //Winner
   res.json({
     players: playerNames,
     moves,
-    result: lastResult
+    winner: lastResult
   });
 
   resetGame(lastResult);
 }
 
-// Lógica de piedra, papel o tijeras
-function getWinner(move1, move2) {
-  if (move1 === move2) return "draw";
-  if (
-    (move1 === "rock" && move2 === "scissors") ||
-    (move1 === "scissors" && move2 === "paper") ||
-    (move1 === "paper" && move2 === "rock")
-  ) {
+// Reglas
+function gameRules(move1, move2) {
+  if (move1 === move2) return "empate";
+  if ((move1 === "rock" && move2 === "scissors") || (move1 === "scissors" && move2 === "paper") || (move1 === "paper" && move2 === "rock")){
+
     return "Jugador 1";
   }
   return "Jugador 2";
 }
 
-// Resetear juego
+// Resetea juego despues de jugar o si se acaba el tiempo
 function resetGame(message) {
   console.log(message);
-  lastResult = message; // Guardar resultado
+
+  lastResult = message;
   players = {};
   moves = {};
   timeoutId = null;
 }
 
-// Endpoint para obtener resultados
-app.get("/result", (req, res) => {
-  res.json({ players: Object.keys(players), moves, result: lastResult });
-});
-
-// Endpoint para resetear manualmente el juego
-app.post("/reset", (req, res) => {
-  resetGame("Juego reiniciado");
-  res.json({ message: "Juego reiniciado" });
-});
-
-app.listen(5050, () => console.log("Servidor corriendo en http://localhost:5050"));
+app.listen(5050, () => console.log("All good in: http://localhost:5050"));

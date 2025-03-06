@@ -44,5 +44,5 @@ function fetchGameState() {
     .catch(error => console.error("Error:", error));
 }
 
-// Actualizar cada 2 segundos
+// Actualizar cada 2 segundos, si no no aparece nada en el display
 setInterval(fetchGameState, 2000);

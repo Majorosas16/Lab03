@@ -11,7 +11,7 @@ app.use(express.json());
 app.use("/app1", express.static(path.join(__dirname, "app1")));
 app.use("/app2", express.static(path.join(__dirname, "app2")));
 
-let players = [];
+let players = {};
 let moves = {};  //El movimiento de cada jugador quedará guardado en el objeto
 let timeoutId = null; //por el momento el temporizador no está activo
 let lastResult = ""; 
@@ -33,6 +33,7 @@ app.post("/register", (req, res) => {
   }
 
   players[name] = null; //Este jugador se ha registrado, pero aún no sabemos qué jugada ha elegido
+  console.log("Jugadores registrados:", players);
 
   res.json({ message: `¡Jugador ${name} registrado!`, players: Object.keys(players) });
 

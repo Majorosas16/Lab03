@@ -9,8 +9,8 @@ function fetchGameState() {
     fetch("http://localhost:5050/users")
       .then(response => response.json())
       .then(data => {
-        console.log("Estado del juego:", data);
-  
+        console.log("🔍 Datos del servidor:", data); 
+
         if (!data.players || data.players.length < 2) {
           playersDiv.innerText = "Esperando el registro de jugadores...";
           movesDiv.innerText = "";
@@ -42,23 +42,12 @@ function fetchGameState() {
 
     countdownDiv.innerText = "";
 
-      // Reinicio luego de 5 segundos atravez de un POST
-      setTimeout(() => {
-        fetch("http://localhost:5050/reset", { method: "POST" })
-          .then(() => {
-            playersDiv.innerText = "Waiting for players...";
-            movesDiv.innerText = "";
-            resultDiv.innerText = "";
-          });
-      }, 5000);
     })
     .catch(error => console.error("Error:", error));
 }
 
     // Función para la cuenta regresiva
     function startCountdown() {
-        let timeLeft = 10;
-        countdownDiv.innerText = `Tiempo restante: ${timeLeft} segundos`;
     
         countdownTimer = setInterval(() => {
         timeLeft--;
@@ -69,7 +58,7 @@ function fetchGameState() {
             countdownTimer = null;
             countdownDiv.innerText = "¡Tiempo agotado!";
         }
-        }, 1000);
+        }, 2000);
     }
 
 // Actualizar cada 2 segundos, si no no aparece nada en el display
